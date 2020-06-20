@@ -16,7 +16,7 @@ public class RunGUI extends Application {
   public void start(Stage primaryStage) throws Exception {
     Parent root = FXMLLoader.load(getClass().getResource("/main_screen.fxml"));
     primaryStage.setTitle("Network Storage Client");
-    primaryStage.setScene(new Scene(root, 640, 400));
+    primaryStage.setScene(new Scene(root, 1200, 600));
     primaryStage.show();
   }
 }
