@@ -42,5 +42,10 @@ public class Network {
     }
   }
 
+  /**
+   * Метод отправки файла
+   *
+   * @param data пересылаемые данные
+   */
   public void sendFile(Byte[] data) {}
 }
