@@ -1,7 +1,6 @@
 package com.excentro.netstorage.gui;
 
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
@@ -13,27 +12,25 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class Controller {
-  @FXML
-  VBox localFiles;
-
-  @FXML
-  VBox remoteFiles;
+  @FXML VBox localFiles;
+  @FXML VBox remoteFiles;
 
   public void cmdExit() {
     Platform.exit();
   }
 
-  public void copyBtnAction(final ActionEvent actionEvent) {
-    PanelController localPC = (PanelController) localFiles.getProperties()
-                                                          .get("ctrl");
-    PanelController remotePC = (PanelController) remoteFiles.getProperties()
-                                                            .get("ctrl");
+  public void copyBtnAction() {
+    PanelController localPC = (PanelController) localFiles.getProperties().get("ctrl");
+    PanelController remotePC = (PanelController) remoteFiles.getProperties().get("ctrl");
 
     if (localPC.getSelectedFileName() == null && remotePC.getSelectedFileName() == null) {
       Alert alert = new Alert(Alert.AlertType.ERROR, "No files chosen", ButtonType.OK);
       alert.showAndWait();
     }
-    PanelController srcPC = null, dstPC = null;
+
+    PanelController srcPC = null;
+    PanelController dstPC = null;
+
     if (localPC.getSelectedFileName() != null) {
       srcPC = localPC;
       dstPC = remotePC;
@@ -42,10 +39,10 @@ public class Controller {
       srcPC = remotePC;
       dstPC = localPC;
     }
+
     Path srcPath = Paths.get(srcPC.getCurrentPath(), srcPC.getSelectedFileName());
-    Path dstPath = Paths.get(dstPC.getCurrentPath())
-                        .resolve(srcPath.getFileName()
-                                        .toString());
+    Path dstPath = Paths.get(dstPC.getCurrentPath()).resolve(srcPath.getFileName().toString());
+
     try {
       Files.copy(srcPath, dstPath);
       dstPC.updateFiles(Paths.get(dstPC.getCurrentPath()));
