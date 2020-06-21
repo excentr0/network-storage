@@ -14,7 +14,7 @@ public class ServerApp {
     EventLoopGroup workerGroup = new NioEventLoopGroup();
     try {
       ServerBootstrap b = new ServerBootstrap();
-      b.group(workerGroup, workerGroup)
+      b.group(boosGroup, workerGroup)
           .channel(NioServerSocketChannel.class)
           .childHandler(
               new ChannelInitializer<SocketChannel>() {
