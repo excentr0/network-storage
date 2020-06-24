@@ -7,10 +7,10 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
 public class FileInfo {
-  private String filename;
-  private FileType type;
+  private final String filename;
+  private final FileType type;
+  private final LocalDateTime lastModified;
   private long size;
-  private LocalDateTime lastModified;
 
   public FileInfo(Path path) {
     try {

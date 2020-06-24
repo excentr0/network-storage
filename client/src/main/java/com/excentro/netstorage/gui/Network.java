@@ -7,9 +7,11 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.codec.string.StringEncoder;
 
 public class Network {
-  private static final String IP_ADDRESS = "127.0.0.1";
+  private static final String HOST = "127.0.0.1";
   private static final int PORT = 8888;
 
   private SocketChannel channel;
@@ -30,10 +32,10 @@ public class Network {
                 @Override
                 protected void initChannel(SocketChannel socketChannel) throws Exception {
                   channel = socketChannel;
+                  socketChannel.pipeline().addLast(new StringDecoder(), new StringEncoder());
                 }
               });
-
-      ChannelFuture future = b.connect(IP_ADDRESS, PORT).sync();
+      ChannelFuture future = b.connect(HOST, PORT).sync();
       future.channel().closeFuture().sync();
     } catch (Exception e) {
       e.printStackTrace();
@@ -47,5 +49,7 @@ public class Network {
    *
    * @param data пересылаемые данные
    */
-  public void sendFile(Byte[] data) {}
+  public void sendFile(String data) {
+    channel.writeAndFlush(data);
+  }
 }

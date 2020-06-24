@@ -14,6 +14,7 @@ import java.nio.file.Paths;
 public class Controller {
   @FXML VBox localFiles;
   @FXML VBox remoteFiles;
+  private Network network;
 
   public void cmdExit() {
     Platform.exit();
