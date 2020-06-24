@@ -1,5 +1,8 @@
 package com.excentro.netstorage.server.nioserver;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -11,6 +14,7 @@ import java.nio.file.Paths;
 
 /** Запускает NIO сервер на порту 8888 и ждет подключения, после чего отправляет файл */
 public class NIOServer {
+  private static final Logger logger = LogManager.getLogger(NIOServer.class);
 
   public static void main(String[] args) throws IOException {
     Path path = Paths.get("./", "download", "file.txt");
@@ -22,7 +26,7 @@ public class NIOServer {
       // принимаем соединения
       server = serverSocket.accept();
     }
-    System.out.println("Got connection from:  " + server.getRemoteAddress());
+    logger.info("Got connection from: {}", server.getRemoteAddress());
     // открываем файл
     try (FileChannel fileChannel = FileChannel.open(path)) {
       ByteBuffer buffer = ByteBuffer.allocate(256);

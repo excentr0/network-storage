@@ -1,5 +1,8 @@
 package com.excentro.netstorage.nioclient;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
@@ -10,6 +13,7 @@ import java.nio.channels.SocketChannel;
 
 /** Скачивает файл с сервера на НИО */
 public class NIOClient {
+  private static final Logger logger = LogManager.getLogger(NIOClient.class);
 
   public static void main(String[] args) throws IOException {
     String fileToWrite = "D:/tmp/file.txt";
@@ -31,7 +35,7 @@ public class NIOClient {
           buffer.clear();
         }
       }
-      System.out.println("File downloaded");
+      logger.info("File Downloaded successfully");
     }
   }
 }
