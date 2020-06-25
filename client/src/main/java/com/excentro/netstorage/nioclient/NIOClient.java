@@ -1,5 +1,8 @@
 package com.excentro.netstorage.nioclient;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
@@ -7,15 +10,13 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SocketChannel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Скачивает файл с сервера на НИО */
 public class NIOClient {
   static final Logger LOGGER = LoggerFactory.getLogger(NIOClient.class);
 
   public static void main(String[] args) throws IOException {
-    String fileToWrite = "/tmp/file.txt";
+    String fileToWrite = "D:/tmp/file.txt";
 
     try (SocketChannel client = SocketChannel.open()) {
       // Открываем соединение на localhost порт 8888
