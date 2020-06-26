@@ -10,11 +10,11 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 public class ServerApp {
   public static void main(String[] args) {
-    EventLoopGroup boosGroup = new NioEventLoopGroup(1);
+    EventLoopGroup bossGroup = new NioEventLoopGroup(1);
     EventLoopGroup workerGroup = new NioEventLoopGroup();
     try {
       ServerBootstrap b = new ServerBootstrap();
-      b.group(boosGroup, workerGroup)
+      b.group(bossGroup, workerGroup)
           .channel(NioServerSocketChannel.class)
           .childHandler(
               new ChannelInitializer<SocketChannel>() {
@@ -27,7 +27,7 @@ public class ServerApp {
     } catch (Exception e) {
       e.printStackTrace();
     } finally {
-      boosGroup.shutdownGracefully();
+      bossGroup.shutdownGracefully();
       workerGroup.shutdownGracefully();
     }
   }
