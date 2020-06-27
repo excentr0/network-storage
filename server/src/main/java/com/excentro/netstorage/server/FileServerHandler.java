@@ -1,10 +1,10 @@
 package com.excentro.netstorage.server;
 
-import com.excentro.netstorage.server.common.FileInfo;
+import com.excentro.netstorage.common.FileInfo;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.DefaultFileRegion;
-import io.netty.channel.SimpleChannelInboundHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,16 +18,27 @@ import java.util.stream.Collectors;
 
 import static java.nio.file.Files.list;
 
-public class FileServerHandler extends SimpleChannelInboundHandler<String> {
+public class FileServerHandler extends ChannelInboundHandlerAdapter {
   static final Logger LOGGER = LoggerFactory.getLogger(FileServerHandler.class);
+  List<FileInfo> fileInfos = updatePath(Paths.get("D:\\"));
 
   @Override
   public void channelActive(ChannelHandlerContext ctx) {
-    ctx.writeAndFlush("Hello: Type the path.\n");
+    ctx.writeAndFlush("Ready");
   }
 
   @Override
-  public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+  public void channelRead(ChannelHandlerContext ctx, Object msg) {
+    LOGGER.info("Got {} from channel", msg);
+    if (msg.equals("list")) {
+      ctx.write(updatePath(Paths.get("D:\\")));
+    } else {
+      ctx.write("Ready");
+    }
+  }
+
+  @Override
+  public void channelReadComplete(ChannelHandlerContext ctx) {
     ctx.flush();
   }
 
@@ -39,16 +50,6 @@ public class FileServerHandler extends SimpleChannelInboundHandler<String> {
       ctx.writeAndFlush(
               "Err: " + cause.getClass().getSimpleName() + ": " + cause.getMessage() + "\n")
           .addListener(ChannelFutureListener.CLOSE);
-    }
-  }
-
-  @Override
-  protected void channelRead0(ChannelHandlerContext ctx, String msg) throws IOException {
-    if (msg.equals("list")) {
-      List<FileInfo> fileInfos = updatePath(Paths.get("D:\\tmp\\"));
-      ctx.writeAndFlush(fileInfos.toString());
-    } else {
-      sendFile(ctx, msg);
     }
   }
 
