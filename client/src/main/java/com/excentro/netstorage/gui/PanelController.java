@@ -1,5 +1,6 @@
 package com.excentro.netstorage.gui;
 
+import com.excentro.netstorage.gui.common.FileInfo;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.event.ActionEvent;
@@ -19,7 +20,7 @@ import java.util.stream.Collectors;
 
 public class PanelController implements Initializable {
   @FXML TextField pathField; // кнопка диска
-  @FXML ComboBox<String> disksBox; // список дисков
+  @FXML ComboBox<String>    disksBox; // список дисков
   @FXML TableView<FileInfo> localFiles; // список фалов
 
   @Override

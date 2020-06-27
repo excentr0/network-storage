@@ -1,4 +1,4 @@
-package com.excentro.netstorage.gui;
+package com.excentro.netstorage.server.common;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -44,10 +44,25 @@ public class FileInfo {
     return lastModified;
   }
 
+  @Override
+  public String toString() {
+    return "FileInfo{"
+        + "filename='"
+        + filename
+        + '\''
+        + ", type="
+        + type
+        + ", lastModified="
+        + lastModified
+        + ", size="
+        + size
+        + '}';
+  }
+
   public enum FileType {
     FILE("F"),
     DIRECTORY("D");
-    private String name;
+    private final String name;
 
     FileType(final String name) {
       this.name = name;

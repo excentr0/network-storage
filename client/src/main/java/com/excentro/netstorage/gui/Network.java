@@ -7,13 +7,13 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.codec.string.StringEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Network {
+  static final Logger LOGGER = LoggerFactory.getLogger(Network.class);
   private static final String HOST = "127.0.0.1";
   private static final int PORT = 8888;
-
   private SocketChannel channel;
 
   public Network() {
@@ -30,15 +30,15 @@ public class Network {
           .handler(
               new ChannelInitializer<SocketChannel>() {
                 @Override
-                protected void initChannel(SocketChannel socketChannel) throws Exception {
+                protected void initChannel(SocketChannel socketChannel) {
                   channel = socketChannel;
-                  socketChannel.pipeline().addLast(new StringDecoder(), new StringEncoder());
+                  socketChannel.pipeline().addLast(new FileHandler());
                 }
               });
       ChannelFuture future = b.connect(HOST, PORT).sync();
       future.channel().closeFuture().sync();
     } catch (Exception e) {
-      e.printStackTrace();
+      LOGGER.error(e.getLocalizedMessage());
     } finally {
       workerGroup.shutdownGracefully();
     }
