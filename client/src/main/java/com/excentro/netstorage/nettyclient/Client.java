@@ -10,6 +10,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
+import io.netty.handler.stream.ChunkedWriteHandler;
 
 public class Client {
   static final int SIZE = Integer.parseInt(System.getProperty("size", "256"));
@@ -30,6 +31,7 @@ public class Client {
                   p.addLast(
                       new ObjectEncoder(),
                       new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
+                      new ChunkedWriteHandler(),
                       new ClientHandler());
                 }
               });

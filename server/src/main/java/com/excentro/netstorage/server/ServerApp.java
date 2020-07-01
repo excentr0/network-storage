@@ -12,6 +12,7 @@ import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.stream.ChunkedWriteHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,12 +34,9 @@ public class ServerApp {
                 public void initChannel(SocketChannel ch) {
                   ch.pipeline()
                       .addLast(
-                          //                          new StringEncoder(CharsetUtil.UTF_8),
-                          //                          new LineBasedFrameDecoder(8192),
-                          //                          new StringDecoder(CharsetUtil.UTF_8),
-                          //                          new ChunkedWriteHandler(),
                           new ObjectEncoder(),
                           new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
+                          new ChunkedWriteHandler(),
                           new FileServerHandler());
                 }
               });
