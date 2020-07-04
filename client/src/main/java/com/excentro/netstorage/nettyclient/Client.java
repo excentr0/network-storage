@@ -9,6 +9,7 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.stream.ChunkedWriteHandler;
 
 public class Client {
   private static final boolean EPOLL = Epoll.isAvailable();
@@ -37,7 +38,8 @@ public class Client {
              @Override
              public void initChannel(SocketChannel ch) {
                ChannelPipeline p = ch.pipeline();
-               p.addLast("clientHandler", new ClientHandler());
+               p.addLast(new ChunkedWriteHandler())
+                .addLast("clientHandler", new ClientHandler());
              }
            });
       b.connect(host, port)

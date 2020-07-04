@@ -10,6 +10,7 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.stream.ChunkedWriteHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,8 @@ public class Server {
            new ChannelInitializer<SocketChannel>() {
              public void initChannel(SocketChannel ch) {
                ChannelPipeline pipeline = ch.pipeline();
-               pipeline.addLast("serverHandler", new ServerHandler());
+               pipeline.addLast(new ChunkedWriteHandler())
+                       .addLast("serverHandler", new ServerHandler());
              }
            });
       b.bind(port)
