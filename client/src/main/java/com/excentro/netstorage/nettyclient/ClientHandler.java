@@ -10,38 +10,32 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 
 public class ClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
-  static final Logger LOGGER = LoggerFactory.getLogger(ClientHandler.class);
-
-  File outFile = new File("D:\\tmp\\newfile.txt");
+  public static final String NEW_FILE = "D:\\tmp\\newfile.txt";
+  static final        Logger LOGGER   = LoggerFactory.getLogger(ClientHandler.class);
+  File outFile = new File(NEW_FILE);
 
   @Override
   public void channelActive(ChannelHandlerContext ctx) {
-    // Send the first message if this handler is a client-side handler.
-    ByteBuf byteBuf = Unpooled.buffer();
-    byteBuf = byteBuf.writeInt(2);
-    ctx.writeAndFlush(byteBuf);
-    LOGGER.info("{} channelActive called", ctx.channel());
-  }
-
-  @Override
-  public void channelReadComplete(ChannelHandlerContext ctx) {
-    LOGGER.info("{} read complete", ctx.channel());
-    ctx.flush();
+    LOGGER.info("Channel active: {}", ctx.channel());
+    ByteBuf firstMessage = Unpooled.buffer(10);
+    for (int i = 0; i < 10; i++) {
+      firstMessage.writeInt(i);
+    }
+    ctx.writeAndFlush(firstMessage);
   }
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx,
                               Throwable cause) {
-    LOGGER.error(cause.getLocalizedMessage());
-    ctx.close();
+    LOGGER.error("Error: {}", cause.getLocalizedMessage());
   }
 
 
   @Override
   protected void channelRead0(ChannelHandlerContext ctx,
                               ByteBuf msg) {
-    LOGGER.info("{}", msg.capacity());
+    LOGGER.info("Got {}", msg);
+    ctx.write(msg);
   }
-
 
 }

@@ -20,7 +20,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>com.excentro.netstorage.server.ServerApp</mainClass>
+                            <mainClass>com.excentro.netstorage.server.Server</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

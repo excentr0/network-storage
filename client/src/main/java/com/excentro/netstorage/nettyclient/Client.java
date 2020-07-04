@@ -4,21 +4,14 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.LineBasedFrameDecoder;
-import io.netty.handler.codec.serialization.ClassResolvers;
-import io.netty.handler.codec.serialization.ObjectDecoder;
-import io.netty.handler.codec.serialization.ObjectEncoder;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.codec.string.StringEncoder;
-import io.netty.handler.stream.ChunkedWriteHandler;
-import io.netty.util.CharsetUtil;
-
-import java.net.InetSocketAddress;
 
 public class Client {
+  private static final boolean EPOLL = Epoll.isAvailable();
 
   private final String host;
   private final int    port;
@@ -34,38 +27,26 @@ public class Client {
   }
 
   private void start() throws InterruptedException {
-    EventLoopGroup group = new NioEventLoopGroup();
+    EventLoopGroup clientGroup = EPOLL ? new EpollEventLoopGroup() : new NioEventLoopGroup();
     try {
       Bootstrap b = new Bootstrap();
-      b.group(group)
+      b.group(clientGroup)
        .channel(NioSocketChannel.class)
-       .remoteAddress(new InetSocketAddress(host, port))
        .handler(
            new ChannelInitializer<SocketChannel>() {
              @Override
              public void initChannel(SocketChannel ch) {
                ChannelPipeline p = ch.pipeline();
-               p.addLast("stringEncoder", new StringEncoder(CharsetUtil.UTF_8));
-               p.addLast("objectEncoder", new ObjectEncoder());
-               p.addLast("frameDecoder", new LineBasedFrameDecoder(8192));
-               p.addLast("stringDecoder", new StringDecoder(CharsetUtil.UTF_8));
-               p.addLast("objectDecoder",
-                         new ObjectDecoder(ClassResolvers.cacheDisabled(null)));
-               p.addLast("chunkedWriteHandler", new ChunkedWriteHandler());
                p.addLast("clientHandler", new ClientHandler());
-               // Удаляем пока эти хендлеры
-               p.remove("objectEncoder");
-               p.remove("objectDecoder");
              }
            });
-      b.connect()
+      b.connect(host, port)
        .sync()
        .channel()
        .closeFuture()
        .sync();
     } finally {
-      group.shutdownGracefully()
-           .sync();
+      clientGroup.shutdownGracefully();
     }
   }
 }
