@@ -10,10 +10,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.TimeZone;
 
 public class ClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
   static final Logger       LOGGER       = LoggerFactory.getLogger(ClientHandler.class);
@@ -25,7 +28,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws IOException {
     LOGGER.info("Channel active: {}", ctx.channel());
-    uploadFile(ctx, Paths.get("D:\\tmp\\2.mp4"));
+//    uploadFile(ctx, Paths.get("D:\\tmp\\2.mp4"));
   }
 
   /**
@@ -43,9 +46,6 @@ public class ClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
     }
   }
 
-  @Override
-  public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-  }
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx,
@@ -63,8 +63,15 @@ public class ClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
   @Override
   protected void channelRead0(ChannelHandlerContext ctx,
-                              ByteBuf byteBuf) throws IOException {
-    saveFile(byteBuf);
+                              ByteBuf byteBuf) {
+//    saveFile(byteBuf);
+    LOGGER.info("length - {}", byteBuf.readLong());
+    LOGGER.info("date - {}",
+                LocalDateTime.ofInstant(Instant.ofEpochSecond(byteBuf.readLong()),
+                                        TimeZone.getDefault()
+                                                .toZoneId()));
+    String filename = byteBuf.toString(StandardCharsets.UTF_8);
+    LOGGER.info("Got {} file name", filename);
   }
 
   private void saveFile(ByteBuf byteBuf) throws IOException {

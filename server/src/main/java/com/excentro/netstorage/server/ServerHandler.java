@@ -2,6 +2,7 @@ package com.excentro.netstorage.server;
 
 import com.excentro.netstorage.common.FileInfo;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.DefaultFileRegion;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -13,9 +14,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,9 +34,36 @@ public class ServerHandler extends SimpleChannelInboundHandler<ByteBuf> {
   private      byte[]       buffer       = new byte[0];
 
   @Override
-  public void channelActive(ChannelHandlerContext ctx) throws IOException {
+  public void channelActive(ChannelHandlerContext ctx) {
     LOGGER.info("{} channel active", ctx.channel());
 //    uploadFile(ctx, Paths.get("D:\\tmp\\1.mp4"));
+    sendFileInfo(ctx);
+  }
+
+  private void sendFileInfo(ChannelHandlerContext ctx) {
+    fileInfo(ctx, "D:\\tmp\\1.mp4");
+  }
+
+  /**
+   * Отправляет имя, время изменения и размер файла
+   *
+   * @param ctx  Контекст
+   * @param file Пусть к файлу
+   */
+  private void fileInfo(ChannelHandlerContext ctx,
+                        String file) {
+    FileInfo fileInfo = new FileInfo(Paths.get(file));
+    byte[] fileName = fileInfo.getFilename()
+                              .getBytes(StandardCharsets.UTF_8);
+    LOGGER.info("Sending {}, {}, {}", fileInfo.getSize(), fileName, fileInfo.getLastModified());
+    ByteBuf buffer = Unpooled.buffer();
+    long toEpochSecond = fileInfo.getLastModified()
+                                 .toEpochSecond(ZoneOffset.ofHours(3));
+    buffer.writeLong(fileInfo.getSize());
+    buffer.writeLong(toEpochSecond);
+    buffer.writeBytes(fileName);
+    ctx.writeAndFlush(buffer);
+    ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
   }
 
   @Override
@@ -53,15 +84,13 @@ public class ServerHandler extends SimpleChannelInboundHandler<ByteBuf> {
   protected void channelRead0(ChannelHandlerContext ctx,
                               ByteBuf byteBuf) throws IOException {
     LOGGER.info("GOT {}", byteBuf);
-    saveFile(byteBuf);
+//    saveFile(byteBuf);
 
   }
 
   private void saveFile(ByteBuf byteBuf) throws IOException {
     File file = new File("D:\\tmp\\4.mp4");
-//    LOGGER.info("Got {}", byteBuf);
     if (this.outputStream == null) {
-//      Files.createDirectories(this.path.getParent());
       if (Files.exists(file.toPath())) {
         Files.delete(file.toPath());
       }
