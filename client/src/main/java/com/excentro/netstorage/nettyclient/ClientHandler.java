@@ -27,7 +27,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
   private      byte[]       buffer       = new byte[0];
 
   @Override
-  public void channelActive(ChannelHandlerContext ctx) throws IOException {
+  public void channelActive(ChannelHandlerContext ctx) {
     LOGGER.info("Channel active: {}", ctx.channel());
     //    uploadFile(ctx, Paths.get("D:\\tmp\\2.mp4"));
   }

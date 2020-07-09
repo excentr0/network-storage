@@ -6,12 +6,14 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.stream.ChunkedWriteHandler;
 
 public class Client {
+
   private static final boolean EPOLL = Epoll.isAvailable();
 
   private final String host;
@@ -32,7 +34,7 @@ public class Client {
     try {
       Bootstrap b = new Bootstrap();
       b.group(clientGroup)
-       .channel(NioSocketChannel.class)
+       .channel(EPOLL ? EpollSocketChannel.class : NioSocketChannel.class)
        .handler(
            new ChannelInitializer<SocketChannel>() {
              @Override
