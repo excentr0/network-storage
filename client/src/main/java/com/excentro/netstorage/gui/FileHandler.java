@@ -11,6 +11,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -30,10 +33,39 @@ public class FileHandler extends SimpleChannelInboundHandler<String> {
   @Override
   protected void channelRead0(ChannelHandlerContext ctx,
                               String msg) throws Exception {
-    saveFile(Unpooled.wrappedBuffer(msg.getBytes("UTF-8")));
+    if (msg.startsWith("Hello")) {
+      LOGGER.info("Got {}", msg);
+      ctx.writeAndFlush("D:\\tmp\\1.mp4\n");
+    } else if (msg.startsWith("OK")) {
+      LOGGER.info("Received {} bytes", msg.length());
+      saveFile2(Unpooled.wrappedBuffer(msg.getBytes("UTF-8")));
+    }
+  }
+
+  private void saveFile2(ByteBuf byteBuf) throws IOException {
+    File file = new File("D:\\tmp\\4.mp4");//remember to change dest
+
+    if (!file.exists()) {
+      file.createNewFile();
+    }
+
+    ByteBuffer byteBuffer = byteBuf.nioBuffer();
+    RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
+    FileChannel fileChannel = randomAccessFile.getChannel();
+
+    while (byteBuffer.hasRemaining()) {
+      fileChannel.position(file.length());
+      fileChannel.write(byteBuffer);
+    }
+
+    byteBuf.release();
+    fileChannel.close();
+    randomAccessFile.close();
+
   }
 
   private void saveFile(ByteBuf byteBuf) throws IOException {
+
     File file = new File("D:\\tmp\\4.mp4");
     if (this.outputStream == null) {
       if (Files.exists(file.toPath())) {
@@ -63,7 +95,7 @@ public class FileHandler extends SimpleChannelInboundHandler<String> {
 
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
-    ctx.writeAndFlush("d:\\tmp\\1.mp4");
+//    ctx.writeAndFlush("d:\\tmp\\1.mp4");
   }
 
   private List<FileInfo> updatePath(Path path) {
