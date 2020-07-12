@@ -22,19 +22,11 @@ import static java.nio.file.Files.list;
 
 
 public class FileHandler extends SimpleChannelInboundHandler<String> {
-  static final Logger LOGGER = LoggerFactory.getLogger(FileHandler.class);
-  OutputStream outputStream = null;
-  byte[]       buffer       = null;
-  int          writtenBytes = 0;
+  static final Logger       LOGGER       = LoggerFactory.getLogger(FileHandler.class);
+  private      OutputStream outputStream;
+  private      int          writtenBytes = 0;
+  private      byte[]       buffer       = new byte[0];
 
-  /**
-   * Is called for each message of type {@link I}.
-   *
-   * @param ctx the {@link ChannelHandlerContext} which this {@link SimpleChannelInboundHandler}
-   *            belongs to
-   * @param msg the message to handle
-   * @throws Exception is thrown if an error occurred
-   */
   @Override
   protected void channelRead0(ChannelHandlerContext ctx,
                               String msg) throws Exception {
