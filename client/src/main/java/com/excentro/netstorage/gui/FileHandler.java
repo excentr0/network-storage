@@ -31,16 +31,18 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
   @Override
   public void channelActive(ChannelHandlerContext ctx) {
 //    ctx.writeAndFlush("d:\\tmp\\1.mp4");
+    LOGGER.info("Established connection {}", ctx.channel());
     ctx.writeAndFlush("file");
-
   }
+
 
   @Override
   public void channelRead(ChannelHandlerContext ctx,
-                          Object msg) throws IOException {
-    LOGGER.info("Got {}",
+                          Object msg) {
+    LOGGER.info("Got {}, {}",
                 msg.getClass()
-                   .getSimpleName());
+                   .getSimpleName(), msg.toString());
+
     ByteBuf buf = ctx.alloc()
                      .buffer();
     try {
@@ -52,7 +54,15 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
       } else if (msg instanceof byte[]) {
         buf.writeBytes((byte[]) msg);
         saveFile(buf);
+      } else if (msg instanceof ArrayList) {
+        ArrayList files = (ArrayList) msg;
+        for (Object file : files) {
+          LOGGER.info("File info: {}", file);
+        }
+        ctx.writeAndFlush("download");
       }
+    } catch (IOException e) {
+      e.printStackTrace();
     } finally {
       buf.release();
     }

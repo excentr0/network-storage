@@ -35,14 +35,15 @@ public class FileServerHandler extends ChannelInboundHandlerAdapter {
 
   @Override
   public void channelRead(ChannelHandlerContext ctx,
-                          Object msg) {
-    LOGGER.info("Got {} - {}",
-                msg.getClass()
-                   .getSimpleName(), msg);
-//    sendFolderInfo(ctx, "D:\\");
-//    sendFile(ctx, msg.toString());
-    FileInfo fileInfo = new FileInfo(Paths.get("D:\\tmp"));
-    ctx.writeAndFlush(fileInfo);
+                          Object msg) throws IOException {
+    if (msg instanceof String) {
+      String msg1 = (String) msg;
+      if (msg1.startsWith("file")) {
+        ctx.writeAndFlush(updatePath(Paths.get("D:\\Документы")));
+      } else if (msg1.startsWith("download")) {
+        sendFile(ctx, "D:\\tmp\\1.mp4");
+      }
+    }
   }
 
   @Override
@@ -62,13 +63,6 @@ public class FileServerHandler extends ChannelInboundHandlerAdapter {
                          .getSimpleName() + ": " + cause.getMessage() + "\n")
          .addListener(ChannelFutureListener.CLOSE);
     }
-  }
-
-  private void sendFolderInfo(ChannelHandlerContext ctx,
-                              String path) {
-    List<FileInfo> fileInfoList = updatePath(Paths.get(path));
-    LOGGER.info("{}", fileInfoList);
-    ctx.writeAndFlush(fileInfoList);
   }
 
   private ArrayList<FileInfo> updatePath(Path path) {
@@ -101,6 +95,13 @@ public class FileServerHandler extends ChannelInboundHandlerAdapter {
 
     LOGGER.info("File {} seeded", fileName);
     fis.close();
+  }
+
+  private void sendFolderInfo(ChannelHandlerContext ctx,
+                              String path) {
+    List<FileInfo> fileInfoList = updatePath(Paths.get(path));
+    LOGGER.info("{}", fileInfoList);
+    ctx.writeAndFlush(fileInfoList);
   }
 
   private void saveFile(ByteBuf byteBuf) throws IOException {
