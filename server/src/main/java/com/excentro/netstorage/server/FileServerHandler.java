@@ -1,20 +1,20 @@
 package com.excentro.netstorage.server;
 
-import com.excentro.netstorage.server.common.FileInfo;
+import com.excentro.netstorage.commons.FileInfo;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.stream.ChunkedFile;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 import static java.nio.file.Files.list;
 
-public class FileServerHandler extends SimpleChannelInboundHandler<String> {
+public class FileServerHandler extends ChannelInboundHandlerAdapter {
   static final Logger       LOGGER       = LoggerFactory.getLogger(FileServerHandler.class);
   private      OutputStream outputStream;
   private      int          writtenBytes = 0;
@@ -30,8 +30,19 @@ public class FileServerHandler extends SimpleChannelInboundHandler<String> {
 
   @Override
   public void channelActive(ChannelHandlerContext ctx) {
-    ctx.writeAndFlush("Hello: Type the path.\n");
     LOGGER.info("Got connection from {}", ctx.channel());
+  }
+
+  @Override
+  public void channelRead(ChannelHandlerContext ctx,
+                          Object msg) {
+    LOGGER.info("Got {} - {}",
+                msg.getClass()
+                   .getSimpleName(), msg);
+//    sendFolderInfo(ctx, "D:\\");
+//    sendFile(ctx, msg.toString());
+    FileInfo fileInfo = new FileInfo(Paths.get("D:\\tmp"));
+    ctx.writeAndFlush(fileInfo);
   }
 
   @Override
@@ -53,37 +64,15 @@ public class FileServerHandler extends SimpleChannelInboundHandler<String> {
     }
   }
 
-  @Override
-  protected void channelRead0(ChannelHandlerContext ctx,
-                              String msg) throws IOException {
-    LOGGER.info("Got {}", msg);
-    sendFile(ctx, msg);
+  private void sendFolderInfo(ChannelHandlerContext ctx,
+                              String path) {
+    List<FileInfo> fileInfoList = updatePath(Paths.get(path));
+    LOGGER.info("{}", fileInfoList);
+    ctx.writeAndFlush(fileInfoList);
   }
 
-  private void sendFile(ChannelHandlerContext ctx,
-                        String fileName) throws IOException {
-    RandomAccessFile raf = null;
-    long length = -1L;
-    try {
-      raf    = new RandomAccessFile(fileName, "r");
-      length = raf.length();
-    } catch (IOException e) {
-      ctx.writeAndFlush("Err: " + e.getClass()
-                                   .getSimpleName() + ": " + e.getMessage() + "\n");
-    } finally {
-      if (length < 0 && raf != null) {
-        raf.close();
-      }
-    }
-    if (raf != null) {
-      ctx.write("OK: " + raf.length() + "\n");
-      ctx.write(new ChunkedFile(raf, 8192));
-    }
-    ctx.writeAndFlush("\n");
-  }
-
-  private List<FileInfo> updatePath(Path path) {
-    List<FileInfo> result = new ArrayList<>();
+  private ArrayList<FileInfo> updatePath(Path path) {
+    ArrayList<FileInfo> result = new ArrayList<>();
     try {
       result.addAll(list(path).map(FileInfo::new)
                               .collect(Collectors.toList()));
@@ -91,6 +80,27 @@ public class FileServerHandler extends SimpleChannelInboundHandler<String> {
       LOGGER.error(e.getLocalizedMessage());
     }
     return result;
+  }
+
+  private void sendFile(ChannelHandlerContext ctx,
+                        String fileName) throws IOException {
+    final int BUFFER_SIZE = 128 * 1024; //this is actually bytes
+    File file = new File(fileName);
+    ctx.writeAndFlush(file.length());
+    FileInputStream fis = new FileInputStream(fileName);
+    byte[] tmpBuffer = new byte[BUFFER_SIZE];
+    int write;
+    while ((write = fis.read(tmpBuffer)) > 0) {
+      if (write < BUFFER_SIZE) { // записываем последнюю часть файла, которая меньше нашего буфера
+        byte[] smallBuffer = new byte[write];
+        System.arraycopy(tmpBuffer, 0, smallBuffer, 0, write);
+        ctx.writeAndFlush(smallBuffer);
+      }
+      ctx.writeAndFlush(tmpBuffer);
+    }
+
+    LOGGER.info("File {} seeded", fileName);
+    fis.close();
   }
 
   private void saveFile(ByteBuf byteBuf) throws IOException {
