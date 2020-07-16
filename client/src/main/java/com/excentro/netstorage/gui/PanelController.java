@@ -87,7 +87,6 @@ public class PanelController implements Initializable {
             }
           }
         });
-
     updateFiles(Paths.get(".")); // читаем папку A
   }
 

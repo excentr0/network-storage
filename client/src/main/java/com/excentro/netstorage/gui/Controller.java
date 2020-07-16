@@ -26,8 +26,6 @@ public class Controller implements Initializable {
   }
 
   public void copyBtnAction() {
-    localPC = (PanelController) localFiles.getProperties().get("ctrl");
-    remotePC = (PanelController) remoteFiles.getProperties().get("ctrl");
 
     if (localPC.getSelectedFileName() == null && remotePC.getSelectedFileName() == null) {
       Alert alert = new Alert(Alert.AlertType.ERROR, "No files chosen", ButtonType.OK);
@@ -60,12 +58,15 @@ public class Controller implements Initializable {
 
   @Override
   public void initialize(URL location, ResourceBundle resources) {
+    localPC = (PanelController) localFiles.getProperties().get("ctrl");
+    remotePC = (PanelController) remoteFiles.getProperties().get("ctrl");
     try {
-      client = new FileClient("127.0.0.1", 8888, localFiles, remoteFiles);
+      client = new FileClient("127.0.0.1", 8888, remotePC);
+      Thread t = new Thread(client);
+      t.setDaemon(true);
+      t.start();
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
-    Path serverPath = Paths.get(".");
-    remotePC.updateFiles(serverPath);
   }
 }

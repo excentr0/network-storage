@@ -6,7 +6,6 @@ import com.excentro.netstorage.commons.FileInfo;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,21 +14,19 @@ import java.util.ArrayList;
 
 public class FileHandler extends ChannelInboundHandlerAdapter {
   static final Logger LOGGER = LoggerFactory.getLogger(FileHandler.class);
-  private final VBox localFiles;
-  private final VBox remoteFiles;
+  PanelController remotePanel;
   private long fileSize = 0;
   private ChannelHandlerContext context;
 
-  public FileHandler(VBox localFiles, VBox remoteFiles) {
-    this.localFiles = localFiles;
-    this.remoteFiles = remoteFiles;
+  public FileHandler(PanelController remotePanel) {
+    this.remotePanel = remotePanel;
   }
 
   @Override
   public void channelActive(ChannelHandlerContext ctx) {
     //    ctx.writeAndFlush("d:\\tmp\\1.mp4");
     this.context = ctx;
-    LOGGER.info("Established connection {}", ctx.channel());
+    LOGGER.info("Established connection {}", context.channel());
     ctx.writeAndFlush(Commands.DIR);
   }
 
@@ -51,10 +48,11 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
         FileActions.saveFile(buf, "D:\\tmp\\4.mp4", 627417589);
       } else if (msg instanceof ArrayList) {
         ArrayList<FileInfo> files = (ArrayList) msg;
-        for (Object file : files) {
+        for (FileInfo file : files) {
           LOGGER.info("File info: {}", file);
         }
-        ctx.writeAndFlush("download");
+        //        remotePanel.localFiles.getItems().clear();
+        //        remotePanel.localFiles.getItems().addAll(files);
       }
     } catch (IOException e) {
       e.printStackTrace();
