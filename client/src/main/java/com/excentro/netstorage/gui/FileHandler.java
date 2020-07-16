@@ -6,31 +6,37 @@ import com.excentro.netstorage.commons.FileInfo;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
-
 public class FileHandler extends ChannelInboundHandlerAdapter {
   static final Logger LOGGER = LoggerFactory.getLogger(FileHandler.class);
-  long fileSize = 0;
+  private final VBox localFiles;
+  private final VBox remoteFiles;
+  private long fileSize = 0;
+  private ChannelHandlerContext context;
 
+  public FileHandler(VBox localFiles, VBox remoteFiles) {
+    this.localFiles = localFiles;
+    this.remoteFiles = remoteFiles;
+  }
 
   @Override
   public void channelActive(ChannelHandlerContext ctx) {
-//    ctx.writeAndFlush("d:\\tmp\\1.mp4");
+    //    ctx.writeAndFlush("d:\\tmp\\1.mp4");
+    this.context = ctx;
     LOGGER.info("Established connection {}", ctx.channel());
     ctx.writeAndFlush(Commands.DIR);
   }
 
-
   @Override
-  public void channelRead(ChannelHandlerContext ctx,
-                          Object msg) {
-    ByteBuf buf = ctx.alloc()
-                     .buffer();
+  public void channelRead(ChannelHandlerContext ctx, Object msg) {
+    this.context = ctx;
+    ByteBuf buf = ctx.alloc().buffer();
     try {
       if (msg instanceof String) {
         LOGGER.info(String.valueOf(msg));
@@ -55,5 +61,9 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
     } finally {
       buf.release();
     }
+  }
+
+  public void sendCommand(Commands command) {
+    this.context.writeAndFlush(command);
   }
 }

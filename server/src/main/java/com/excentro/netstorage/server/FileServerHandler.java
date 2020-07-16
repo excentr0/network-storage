@@ -16,21 +16,18 @@ import static com.excentro.netstorage.commons.FileActions.*;
 public class FileServerHandler extends ChannelInboundHandlerAdapter {
   static final Logger LOGGER = LoggerFactory.getLogger(FileServerHandler.class);
 
-
   @Override
   public void channelActive(ChannelHandlerContext ctx) {
     LOGGER.info("Got connection from {}", ctx.channel());
   }
 
   @Override
-  public void channelRead(ChannelHandlerContext ctx,
-                          Object msg) throws IOException {
-    ByteBuf buf = ctx.alloc()
-                     .buffer();
+  public void channelRead(ChannelHandlerContext ctx, Object msg) throws IOException {
+    ByteBuf buf = ctx.alloc().buffer();
     try {
       if (msg instanceof byte[]) { // принимаем файл
         buf.writeBytes((byte[]) msg);
-        saveFile(buf, "D:\\tmp\\upload.mp4", 627417589); //надо передавать размер файла
+        saveFile(buf, "D:\\tmp\\upload.mp4", 627417589); // надо передавать размер файла
       } else if (msg instanceof Commands) {
         switch ((Commands) msg) {
           case UPLOAD:
@@ -63,16 +60,13 @@ public class FileServerHandler extends ChannelInboundHandlerAdapter {
   }
 
   @Override
-  public void exceptionCaught(ChannelHandlerContext ctx,
-                              Throwable cause) {
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     LOGGER.error(cause.getLocalizedMessage());
 
-    if (ctx.channel()
-           .isActive()) {
+    if (ctx.channel().isActive()) {
       ctx.writeAndFlush(
-          "Err: " + cause.getClass()
-                         .getSimpleName() + ": " + cause.getMessage() + "\n")
-         .addListener(ChannelFutureListener.CLOSE);
+              "Err: " + cause.getClass().getSimpleName() + ": " + cause.getMessage() + "\n")
+          .addListener(ChannelFutureListener.CLOSE);
     }
   }
 }
