@@ -6,6 +6,7 @@ import com.excentro.netstorage.commons.FileInfo;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import javafx.scene.control.TextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,18 +48,21 @@ public class FileHandler extends ChannelInboundHandlerAdapter {
         buf.writeBytes((byte[]) msg);
         FileActions.saveFile(buf, "D:\\tmp\\4.mp4", 627417589);
       } else if (msg instanceof ArrayList) {
-        ArrayList<FileInfo> files = (ArrayList) msg;
-        for (FileInfo file : files) {
-          LOGGER.info("File info: {}", file);
-        }
-        //        remotePanel.localFiles.getItems().clear();
-        //        remotePanel.localFiles.getItems().addAll(files);
+        updateRemoteDir((ArrayList) msg);
+        remotePanel.pathField = new TextField("."); // TODO передать удаленную папку
       }
     } catch (IOException e) {
       e.printStackTrace();
     } finally {
       buf.release();
     }
+  }
+
+  private void updateRemoteDir(ArrayList msg) {
+    ArrayList<FileInfo> files = msg;
+    remotePanel.localFiles.getItems().clear();
+    remotePanel.localFiles.getItems().addAll(files);
+    remotePanel.localFiles.sort();
   }
 
   public void sendCommand(Commands command) {

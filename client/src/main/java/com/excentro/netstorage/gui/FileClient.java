@@ -16,13 +16,20 @@ import org.slf4j.LoggerFactory;
 public class FileClient implements Runnable {
 
   static final Logger LOGGER = LoggerFactory.getLogger(FileClient.class);
-  private final FileHandler fileHandler;
+  private final String host;
+  private final int port;
+  private final PanelController remotePC;
+  private FileHandler fileHandler;
 
-  public FileClient(final String host, final int port, PanelController remotePanel)
-      throws InterruptedException {
+  public FileClient(String host, int port, PanelController remotePC) {
+    this.host = host;
+    this.port = port;
+    this.remotePC = remotePC;
+  }
 
+  public void run() {
     NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
-    this.fileHandler = new FileHandler(remotePanel);
+    this.fileHandler = new FileHandler(remotePC);
     try {
       Bootstrap b = new Bootstrap();
       b.group(eventLoopGroup)
@@ -39,15 +46,16 @@ public class FileClient implements Runnable {
                 }
               });
 
-      b.connect(host, port).sync().channel().closeFuture().sync();
+      b.connect(host, port).sync().channel().closeFuture().syncUninterruptibly();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
     } finally {
       eventLoopGroup.shutdownGracefully();
     }
-  }
-
-  public void run() {
     LOGGER.info("Client started");
   }
+  /** Остановить поток */
+  public void stop() {}
 
   public void sendCommand(Commands command) {
     fileHandler.sendCommand(command);
