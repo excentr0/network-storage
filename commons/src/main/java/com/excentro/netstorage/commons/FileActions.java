@@ -5,7 +5,6 @@ import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -14,7 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.nio.file.Files.list;
@@ -27,15 +25,10 @@ public class FileActions {
 
   private FileActions() {}
 
-  public static void saveFile(ByteBuf byteBuf, String fileName, long fileSize) throws IOException {
-    File file = new File(fileName);
+  public static void saveFile(ByteBuf byteBuf, long fileSize, Path dstPath) throws IOException {
     if (outputStream == null) {
-      if (Files.exists(file.toPath())) {
-        Files.delete(file.toPath());
-      }
       outputStream =
-          Files.newOutputStream(
-              file.toPath(), StandardOpenOption.CREATE_NEW, StandardOpenOption.APPEND);
+          Files.newOutputStream(dstPath, StandardOpenOption.CREATE_NEW, StandardOpenOption.APPEND);
     }
     int size = byteBuf.readableBytes();
     if (size > buffer.length) {
@@ -47,18 +40,21 @@ public class FileActions {
       writtenBytes += size;
       if (writtenBytes == fileSize) {
         outputStream.close();
-        LOGGER.info("Saved {}. Written {} bytes of {}", fileName, writtenBytes, fileSize);
+        LOGGER.info(
+            "Saved {}. Written {} bytes of {}", dstPath.getFileName(), writtenBytes, fileSize);
       }
     } catch (ClosedChannelException ignored) {
       // Пока игнорируем исключение
     }
   }
 
-  public static void sendFile(ChannelHandlerContext ctx, String fileName) throws IOException {
+  public static void sendFile(ChannelHandlerContext ctx, Path srcPath, Path dstPath)
+      throws IOException {
     final int BUFFER_SIZE = 128 * 1024; // размер буфера
-    File file = new File(fileName);
-    ctx.writeAndFlush(file.length()); // передаем размер файла
-    try (FileInputStream fileInputStream = new FileInputStream(fileName)) {
+    FileInfo fileInfo = new FileInfo(srcPath);
+    ctx.writeAndFlush(new SrcDst(srcPath.toString(), dstPath.toString()));
+    ctx.writeAndFlush(fileInfo);
+    try (FileInputStream fileInputStream = new FileInputStream(srcPath.toString())) {
       byte[] tmpBuffer = new byte[BUFFER_SIZE]; // передаем файл блоками по BUFFER_SIZE
       int readed; // считаем, сколько передано
       while ((readed = fileInputStream.read(tmpBuffer)) > 0) {
@@ -70,7 +66,7 @@ public class FileActions {
         }
         ctx.writeAndFlush(tmpBuffer);
       }
-      LOGGER.info("File {} seeded", fileName);
+      LOGGER.info("File {} seeded", srcPath);
     }
   }
 
@@ -79,13 +75,13 @@ public class FileActions {
     ctx.writeAndFlush(updatePath(path));
   }
 
-  public static List<FileInfo> updatePath(Path path) {
+  public static Dir updatePath(Path path) {
     ArrayList<FileInfo> result = new ArrayList<>();
     try {
       result.addAll(list(path).map(FileInfo::new).collect(Collectors.toList()));
     } catch (IOException e) {
       LOGGER.error(e.getLocalizedMessage());
     }
-    return result;
+    return new Dir(path.toString(), result);
   }
 }

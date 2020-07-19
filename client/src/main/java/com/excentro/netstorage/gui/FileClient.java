@@ -20,6 +20,7 @@ public class FileClient implements Runnable {
   private final int port;
   private final PanelController remotePC;
   private FileHandler fileHandler;
+  private volatile boolean running;
 
   public FileClient(String host, int port, PanelController remotePC) {
     this.host = host;
@@ -27,35 +28,52 @@ public class FileClient implements Runnable {
     this.remotePC = remotePC;
   }
 
+  public FileHandler getFileHandler() {
+    return fileHandler;
+  }
+
   public void run() {
     NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
     this.fileHandler = new FileHandler(remotePC);
-    try {
-      Bootstrap b = new Bootstrap();
-      b.group(eventLoopGroup)
-          .channel(NioSocketChannel.class)
-          .handler(
-              new ChannelInitializer<SocketChannel>() {
-                @Override
-                public void initChannel(SocketChannel ch) {
-                  ChannelPipeline p = ch.pipeline();
-                  p.addLast(
-                      new ObjectEncoder(),
-                      new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
-                      fileHandler);
-                }
-              });
+    setRunning(true);
+    while (running) {
+      try {
+        Bootstrap b = new Bootstrap();
+        b.group(eventLoopGroup)
+            .channel(NioSocketChannel.class)
+            .handler(
+                new ChannelInitializer<SocketChannel>() {
+                  @Override
+                  public void initChannel(SocketChannel ch) {
+                    ChannelPipeline p = ch.pipeline();
+                    p.addLast(
+                        new ObjectEncoder(),
+                        new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
+                        fileHandler);
+                  }
+                });
 
-      b.connect(host, port).sync().channel().closeFuture().syncUninterruptibly();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    } finally {
-      eventLoopGroup.shutdownGracefully();
+        b.connect(host, port).sync().channel().closeFuture().syncUninterruptibly();
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      } finally {
+        eventLoopGroup.shutdownGracefully();
+      }
     }
+
     LOGGER.info("Client started");
   }
+
+  public void setRunning(boolean running) {
+    this.running = running;
+  }
+
   /** Остановить поток */
-  public void stop() {}
+  public void stop() {
+    if (running) {
+      setRunning(false);
+    }
+  }
 
   public void sendCommand(Commands command) {
     fileHandler.sendCommand(command);

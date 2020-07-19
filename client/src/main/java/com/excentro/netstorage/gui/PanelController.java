@@ -19,7 +19,7 @@ import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
 public class PanelController implements Initializable {
-  @FXML TextField pathField; // кнопка диска
+  @FXML TextField pathField; // локальный путь
   @FXML ComboBox<String> disksBox; // список дисков
   @FXML TableView<FileInfo> localFiles; // список файлов
 
