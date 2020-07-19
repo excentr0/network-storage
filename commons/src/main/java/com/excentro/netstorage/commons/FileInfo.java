@@ -1,12 +1,13 @@
-package com.excentro.netstorage.server.common;
+package com.excentro.netstorage.commons;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
-public class FileInfo {
+public class FileInfo implements Serializable {
   private final String filename;
   private final FileType type;
   private final LocalDateTime lastModified;
@@ -62,7 +63,7 @@ public class FileInfo {
   public enum FileType {
     FILE("F"),
     DIRECTORY("D");
-    private final String name;
+    private String name;
 
     FileType(final String name) {
       this.name = name;

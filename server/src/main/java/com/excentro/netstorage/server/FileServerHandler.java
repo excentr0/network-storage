@@ -1,84 +1,95 @@
 package com.excentro.netstorage.server;
 
-import com.excentro.netstorage.server.common.FileInfo;
+import com.excentro.netstorage.commons.Commands;
+import com.excentro.netstorage.commons.Dir;
+import com.excentro.netstorage.commons.FileInfo;
+import com.excentro.netstorage.commons.SrcDst;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.DefaultFileRegion;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
-import static java.nio.file.Files.list;
+import static com.excentro.netstorage.commons.FileActions.*;
 
-public class FileServerHandler extends SimpleChannelInboundHandler<String> {
+public class FileServerHandler extends ChannelInboundHandlerAdapter {
   static final Logger LOGGER = LoggerFactory.getLogger(FileServerHandler.class);
+  private String fileName;
+  private long fileSize;
+  private String localPath = "D:\\tmp";
+  private Path dstPath = Paths.get(localPath);
+  private Path srcPath;
 
   @Override
   public void channelActive(ChannelHandlerContext ctx) {
-    ctx.writeAndFlush("Hello: Type the path.\n");
+    LOGGER.info("Got connection from {}", ctx.channel());
+    File saveDir = new File(localPath);
+    if (!saveDir.exists()) {
+      saveDir.mkdirs();
+    }
   }
 
   @Override
-  public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+  public void channelRead(ChannelHandlerContext ctx, Object msg) throws IOException {
+    ByteBuf buf = ctx.alloc().buffer();
+    try {
+      if (msg instanceof byte[]) { // принимаем файл
+        buf.writeBytes((byte[]) msg);
+        saveFile(buf, fileSize, dstPath);
+      } else if (msg instanceof Commands) {
+        switch ((Commands) msg) {
+          case UPLOAD:
+            LOGGER.info("Ready to receive file");
+            ctx.writeAndFlush("Ready");
+            break;
+          case DOWNLOAD:
+            LOGGER.info("Sending file");
+            sendFile(ctx, srcPath, dstPath);
+            break;
+          case MOVE:
+          case DELETE:
+            break;
+          case DIR:
+            Dir dir = updatePath(dstPath.getParent());
+            ctx.writeAndFlush(dir);
+            LOGGER.info("Sending folder info: {}", dir);
+            break;
+          default:
+            LOGGER.error("Unexpected value: {}", msg);
+        }
+      } else if (msg instanceof FileInfo) {
+        fileName = localPath.concat(((FileInfo) msg).getFilename());
+        fileSize = ((FileInfo) msg).getSize();
+        LOGGER.info("Got FileInfo: {}", msg);
+      } else if (msg instanceof SrcDst) {
+        LOGGER.info("Got path {}", msg);
+        dstPath = Paths.get(((SrcDst) msg).getDst());
+        srcPath = Paths.get(((SrcDst) msg).getSrc());
+      }
+    } finally {
+      buf.release();
+    }
+  }
+
+  @Override
+  public void channelReadComplete(ChannelHandlerContext ctx) {
     ctx.flush();
   }
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-    LOGGER.error(cause.getLocalizedMessage());
+    LOGGER.error(cause.getMessage());
 
     if (ctx.channel().isActive()) {
       ctx.writeAndFlush(
               "Err: " + cause.getClass().getSimpleName() + ": " + cause.getMessage() + "\n")
           .addListener(ChannelFutureListener.CLOSE);
     }
-  }
-
-  @Override
-  protected void channelRead0(ChannelHandlerContext ctx, String msg) throws IOException {
-    if (msg.equals("list")) {
-      List<FileInfo> fileInfos = updatePath(Paths.get("D:\\tmp\\"));
-      ctx.writeAndFlush(fileInfos.toString());
-    } else {
-      sendFile(ctx, msg);
-    }
-  }
-
-  private List<FileInfo> updatePath(Path path) {
-    List<FileInfo> result = new ArrayList<>();
-    try {
-      result.addAll(list(path).map(FileInfo::new).collect(Collectors.toList()));
-    } catch (IOException e) {
-      LOGGER.error(e.getLocalizedMessage());
-    }
-    return result;
-  }
-
-  private void sendFile(ChannelHandlerContext ctx, String msg) throws IOException {
-    RandomAccessFile raf = null;
-    long length = -1L;
-    try {
-      raf = new RandomAccessFile(msg, "r");
-      length = raf.length();
-    } catch (IOException e) {
-      ctx.writeAndFlush("Err: " + e.getClass().getSimpleName() + ": " + e.getMessage() + "\n");
-    } finally {
-      if (length < 0 && raf != null) {
-        raf.close();
-      }
-    }
-    if (raf != null) {
-      ctx.write("OK: " + raf.length() + "\n");
-      ctx.write(new DefaultFileRegion(raf.getChannel(), 0, length));
-    }
-    ctx.writeAndFlush("\n");
   }
 }
